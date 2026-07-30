@@ -83,6 +83,8 @@ class UI {
             });
         }
         this.initAuthHandlers();
+        this.initMainAuthHandlers();
+        this.checkMainAuthStatus();
 
         document.getElementById('settings-btn').addEventListener('click', (e) => {
             e.stopPropagation();
@@ -978,6 +980,98 @@ class UI {
             logoutBtn.addEventListener('click', async () => {
                 await signOut();
                 this.checkAuthStatus();
+            });
+        }
+    }
+
+    async checkMainAuthStatus() {
+        const user = await getCurrentUser();
+        const form = document.getElementById('main-auth-form');
+        const userCard = document.getElementById('main-user-card');
+        const emailTag = document.getElementById('user-email-tag');
+        const continueBtn = document.getElementById('continue-btn');
+        const newWorldBtn = document.getElementById('new-world-btn');
+        const playHint = document.getElementById('play-hint');
+
+        if (user) {
+            if (form) form.classList.add('hidden');
+            if (userCard) userCard.classList.remove('hidden');
+            if (emailTag) emailTag.textContent = user.email.toUpperCase();
+
+            // Fetch cloud save if local save is empty
+            const cloudSave = await loadProgressFromCloud();
+            if (cloudSave) {
+                localStorage.setItem('teecraft_save_v1', JSON.stringify(cloudSave));
+            }
+
+            const rawSave = localStorage.getItem('teecraft_save_v1');
+            if (rawSave) {
+                if (continueBtn) continueBtn.classList.remove('hidden');
+                if (newWorldBtn) newWorldBtn.classList.remove('hidden');
+                if (playHint) playHint.textContent = 'Click to Continue Game';
+            } else {
+                if (continueBtn) continueBtn.classList.add('hidden');
+                if (newWorldBtn) newWorldBtn.classList.remove('hidden');
+                if (playHint) playHint.textContent = 'Click to Play New Game';
+            }
+        } else {
+            if (form) form.classList.remove('hidden');
+            if (userCard) userCard.classList.add('hidden');
+        }
+    }
+
+    initMainAuthHandlers() {
+        const form = document.getElementById('main-auth-form');
+        const signupBtn = document.getElementById('main-auth-signup');
+        const logoutBtn = document.getElementById('auth-logout-btn');
+        const msgDiv = document.getElementById('main-auth-msg');
+
+        if (form) {
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const email = document.getElementById('main-auth-email').value;
+                const password = document.getElementById('main-auth-password').value;
+                if (msgDiv) msgDiv.textContent = 'Signing in...';
+                const { data, error } = await signIn(email, password);
+                if (error) {
+                    if (msgDiv) msgDiv.textContent = error.message;
+                } else {
+                    if (msgDiv) msgDiv.textContent = '';
+                    await this.checkMainAuthStatus();
+                    const cloudSave = await loadProgressFromCloud();
+                    if (cloudSave) {
+                        localStorage.setItem('teecraft_save_v1', JSON.stringify(cloudSave));
+                        alert('Welcome back! Cloud save loaded. Reloading world...');
+                        location.reload();
+                    }
+                }
+            });
+        }
+
+        if (signupBtn) {
+            signupBtn.addEventListener('click', async () => {
+                const email = document.getElementById('main-auth-email').value;
+                const password = document.getElementById('main-auth-password').value;
+                if (!email || !password) {
+                    if (msgDiv) msgDiv.textContent = 'Please enter email & password';
+                    return;
+                }
+                if (msgDiv) msgDiv.textContent = 'Creating account...';
+                const { data, error } = await signUp(email, password);
+                if (error) {
+                    if (msgDiv) msgDiv.textContent = error.message;
+                } else {
+                    if (msgDiv) msgDiv.textContent = 'Account created! Logged in.';
+                    await this.checkMainAuthStatus();
+                }
+            });
+        }
+
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', async () => {
+                await signOut();
+                localStorage.removeItem('teecraft_save_v1');
+                location.reload();
             });
         }
     }

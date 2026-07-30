@@ -107,12 +107,18 @@ if (existingSave) {
     continueBtn.classList.add('hidden');
 }
 
-blocker.addEventListener('click', () => {
+import { getCurrentUser } from './auth.js';
+
+blocker.addEventListener('click', async () => {
+    const user = await getCurrentUser();
+    if (!user) return; // Must be logged in to play
     if (!ui.anyScreenOpen() && player.alive) {
         player.controls.lock();
     }
 });
-renderer.domElement.addEventListener('click', () => {
+renderer.domElement.addEventListener('click', async () => {
+    const user = await getCurrentUser();
+    if (!user) return; // Must be logged in to play
     if (!ui.anyScreenOpen() && player.alive && !player.controls.isLocked) {
         player.controls.lock();
     }

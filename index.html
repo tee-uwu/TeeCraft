@@ -32,13 +32,37 @@
                 <h1 class="mc-title">TEECRAFT</h1>
                 <div class="splash-text">Also with Castle & Big Farm!</div>
             </div>
-            <p id="play-hint" class="mc-btn">Click to Play</p>
-            <div class="menu-buttons">
-                <button id="continue-btn" class="mc-btn hidden">Continue</button>
-                <button id="new-world-btn" class="mc-btn hidden">New World</button>
-                <button id="account-btn" class="mc-btn">Account 👤</button>
-                <button id="settings-btn" class="mc-btn">Settings</button>
+
+            <!-- MANDATORY AUTH CARD -->
+            <div id="main-auth-card" class="mc-auth-card">
+                <!-- Logged Out Form -->
+                <form id="main-auth-form">
+                    <h3 class="auth-header">PLEASE LOG IN TO PLAY</h3>
+                    <div id="main-auth-msg"></div>
+                    <div style="display:flex; flex-direction:column; gap:10px; width:300px; margin: 0 auto;">
+                        <input type="email" id="main-auth-email" placeholder="Enter Email" required class="mc-input">
+                        <input type="password" id="main-auth-password" placeholder="Enter Password" required class="mc-input">
+                        <div style="display:flex; gap:8px;">
+                            <button type="submit" id="main-auth-login" class="mc-btn" style="flex:1;">Sign In</button>
+                            <button type="button" id="main-auth-signup" class="mc-btn" style="flex:1; background:#2563eb !important;">Sign Up</button>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Logged In Card -->
+                <div id="main-user-card" class="hidden">
+                    <p class="user-welcome">WELCOME, <span id="user-email-tag" style="color:#ffff55;">PLAYER</span>!</p>
+                    <p class="cloud-status">☁️ Supabase Cloud Auto-Sync Enabled</p>
+                    <div class="menu-buttons" style="margin-bottom:12px;">
+                        <button id="continue-btn" class="mc-btn hidden">Continue Saved Game</button>
+                        <button id="new-world-btn" class="mc-btn hidden">New World</button>
+                        <button id="auth-logout-btn" class="mc-btn" style="background:#b91c1c !important;">Sign Out 🚪</button>
+                        <button id="settings-btn" class="mc-btn">Settings ⚙️</button>
+                    </div>
+                    <p id="play-hint" class="mc-btn" style="background:#16a34a !important; width:260px; margin:0 auto;">Click to Play Game</p>
+                </div>
             </div>
+
             <div class="controls mc-controls">
                 <span class="ctrl-title">CONTROLS</span><br>
                 <b>WASD</b> to Move &nbsp;|&nbsp; <b>Space</b> Jump &nbsp;|&nbsp; <b>Shift</b> Swim / Sneak<br>
