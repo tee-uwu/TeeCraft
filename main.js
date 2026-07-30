@@ -10,6 +10,8 @@ import { hasSave, loadGame, clearSave, applySaveToWorld, applySaveToPlayer, save
 import { showMinimap, hideMinimap, updateMinimap } from './minimap.js';
 import { initSchematics } from './schematics.js';
 import { MultiplayerManager } from './multiplayer.js';
+import { initCommands, cheats } from './commands.js';
+import { AmbientManager } from './ambient.js';
 
 // --- 1. Scene & Core Setup ---
 const scene = new THREE.Scene();
@@ -80,6 +82,15 @@ const dayNight = { time: existingSave && typeof existingSave.time === 'number' ?
 const DAY_LENGTH = 600; // seconds for a full day/night cycle
 
 const multiplayer = new MultiplayerManager(scene, world, player);
+const ambient = new AmbientManager(scene);
+
+// Spawn player at Castle on new game
+if (!existingSave) {
+    player.teleportToCastle();
+}
+
+// Commands / Cheat Console init
+initCommands(player, world, saveGame, dayNight);
 
 const manualSaveBtn = document.getElementById('manual-save-btn');
 if (manualSaveBtn) {
@@ -308,6 +319,14 @@ function animate() {
     }
     particleManager.update(dt);
     multiplayer.update(dt);
+    ambient.update(dt, camera.position);
+
+    // God mode — keep health/hunger full
+    if (cheats.godMode) {
+        player.health = 20;
+        player.hunger = 20;
+        player.invulnTimer = 1;
+    }
 
     ui.tick(dt);
     ui.updateCoords(player, mobManager, entityManager);

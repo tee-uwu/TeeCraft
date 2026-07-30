@@ -27,6 +27,41 @@ canvas { display: block; }
     pointer-events: auto;
 }
 
+.console-panel {
+    position: absolute;
+    top: 30%; left: 50%;
+    transform: translate(-50%, -30%);
+    width: 620px;
+    max-width: 92vw;
+    background: rgba(10, 6, 18, 0.96);
+    border: 3px solid #a855f7;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.95), 0 0 30px rgba(168, 85, 247, 0.4);
+    padding: 18px 22px;
+    z-index: 2500 !important;
+    pointer-events: auto;
+}
+
+.console-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 11px;
+    color: #ffaa00;
+    margin-bottom: 10px;
+    text-shadow: 1px 1px 0 #000;
+}
+
+.console-log {
+    background: #06040a;
+    border: 2px solid #333;
+    padding: 10px;
+    height: 120px;
+    overflow-y: auto;
+    font-family: 'Silkscreen', monospace;
+    font-size: 11px;
+    color: #55ffff;
+    line-height: 1.5;
+    white-space: pre-wrap;
+}
+
 .logo-container {
     position: relative;
     margin-bottom: 44px;

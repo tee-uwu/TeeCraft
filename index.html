@@ -74,11 +74,23 @@
 
             <div class="controls mc-controls">
                 <span class="ctrl-title">CONTROLS</span><br>
-                <b>WASD</b> to Move &nbsp;|&nbsp; <b>Space</b> Jump &nbsp;|&nbsp; <b>Shift</b> Swim / Sneak<br>
+                <b>WASD</b> to Move &nbsp;|&nbsp; <b>Space</b> Jump / Ascend &nbsp;|&nbsp; <b>Shift</b> Swim / Sneak<br>
                 <b>Left-Click</b>: Mine / Attack &nbsp;|&nbsp; <b>Right-Click</b>: Place / Use<br>
-                <b>1-9</b>: Hotbar &nbsp;|&nbsp; <b>E</b>: Inventory &nbsp;|&nbsp; <b>B</b>: Waypoints &nbsp;|&nbsp; <b>F</b>: Eat &nbsp;|&nbsp; <b>F3</b>: Debug
+                <b>1-9</b>: Hotbar &nbsp;|&nbsp; <b>E</b>: Inventory &nbsp;|&nbsp; <b>B</b>: Waypoints &nbsp;|&nbsp; <b>/ / K</b>: Commands & Cheats &nbsp;|&nbsp; <b>F3</b>: Debug
             </div>
         </div>
+        </div>
+
+        <!-- Command Console & Cheat Codes Prompt -->
+        <div id="command-console" class="hidden console-panel">
+            <div class="console-title">TEECRAFT COMMAND CONSOLE & CHEATS</div>
+            <div id="console-output" class="console-log">Type 'help', 'respawn', 'fly', or 'structure castle' for commands...</div>
+            <form id="console-form" style="display:flex; gap:8px; margin-top:8px;">
+                <span style="color:#55ffff; font-family:'Press Start 2P', monospace; font-size:14px; line-height:36px;">&gt;</span>
+                <input type="text" id="console-input" placeholder="Type command (e.g. respawn, fly, give diamond_sword, structure castle)..." autocomplete="off" style="flex:1; padding:8px 12px; background:#0f091a; border:2px solid #a855f7; color:#ffff55; font-family:'Silkscreen', monospace; font-size:12px; outline:none;">
+                <button type="submit" class="mc-btn" style="padding:4px 16px;">Run</button>
+            </form>
+            <p style="font-size:10px; color:#888; margin:6px 0 0 0; text-align:right;">Press Esc to close</p>
         </div>
 
         <!-- Account / Auth Modal -->

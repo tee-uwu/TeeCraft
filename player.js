@@ -29,9 +29,10 @@ export class Player {
         this.height = 1.8;
         this.velocity = new THREE.Vector3();
         this.onGround = false;
-        this.baseSpeed = 28.0; // Slower, smoother grounded movement
-        this.jumpSpeed = 9.6;
-        this.gravity = 30.0;
+        this.baseSpeed = 16.0; // Slower, smoother, realistic walking speed
+        this.jumpSpeed = 8.8;
+        this.gravity = 28.0;
+        this.isFlying = false; // Creative flight mode cheat
 
         this._initHandModel();
 
@@ -819,25 +820,56 @@ export class Player {
         if (moveVec.lengthSq() > 0.0001) moveVec.normalize();
 
         let speed = this.baseSpeed;
-        if (this.isSprinting) speed *= 1.5;
+        if (this.isSprinting) speed *= 1.55;
         if (this.isCrouching) speed *= 0.3;
         if (this.isSwimming) speed *= 0.55;
+        if (this.isFlying) speed *= 2.0;
 
-        if (this.keys.KeyW || this.keys.KeyA || this.keys.KeyS || this.keys.KeyD) {
+        if (this.isFlying) {
+            // Creative Flight Physics
             this.velocity.x += moveVec.x * speed * friction * dt;
             this.velocity.z += moveVec.z * speed * friction * dt;
-        }
-
-        if (this.keys.Space && this.onGround && !this.isSwimming) {
-            this.velocity.y = this.jumpSpeed;
+            if (this.keys.Space) this.velocity.y = Math.min(this.velocity.y + 28 * dt, 14.0);
+            else if (this.keys.ShiftLeft) this.velocity.y = Math.max(this.velocity.y - 28 * dt, -14.0);
+            else this.velocity.y *= (1 - 8.0 * dt);
+            this.velocity.x *= (1 - 8.0 * dt);
+            this.velocity.z *= (1 - 8.0 * dt);
+            this.fallStartY = null;
             this.onGround = false;
-            this.fallStartY = this.camera.position.y;
+            this.camera.position.x += this.velocity.x * dt;
+            this.camera.position.y += this.velocity.y * dt;
+            this.camera.position.z += this.velocity.z * dt;
+        } else {
+            if (this.keys.KeyW || this.keys.KeyA || this.keys.KeyS || this.keys.KeyD) {
+                this.velocity.x += moveVec.x * speed * friction * dt;
+                this.velocity.z += moveVec.z * speed * friction * dt;
+            }
+            if (this.keys.Space && this.onGround && !this.isSwimming) {
+                this.velocity.y = this.jumpSpeed;
+                this.onGround = false;
+                this.fallStartY = this.camera.position.y;
+            }
+            this.checkCollisions(dt);
         }
-
-        this.checkCollisions(dt);
 
         if (this.camera.position.y < -10 && this.alive) {
             this.damage(100);
         }
+    }
+
+    teleportToCastle() {
+        // Castle/Hub spawn point
+        this.camera.position.set(8, 38, 8);
+        this.velocity.set(0, 0, 0);
+        this.onGround = true;
+        this.fallStartY = null;
+    }
+
+    teleportToWorld() {
+        // Portal exit — random open world spawn
+        this.camera.position.set(64, 38, 64);
+        this.velocity.set(0, 0, 0);
+        this.onGround = true;
+        this.fallStartY = null;
     }
 }
