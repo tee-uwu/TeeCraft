@@ -235,8 +235,11 @@ const NIGHT_COLOR = new THREE.Color('#0a1128');
 const RAIN_COLOR = new THREE.Color('#4a5e6d');
 const _skyColor = new THREE.Color();
 
+const DAY_CYCLE_MS = 600000; // 10 minutes per full 24h Day/Night cycle
+
 function updateDayNight(dt) {
-    dayNight.time = 0.28; // Locked static bright daytime for all multiplayer players
+    // Globally synchronized UTC Epoch Time (Identical for all multiplayer players worldwide)
+    dayNight.time = (Date.now() % DAY_CYCLE_MS) / DAY_CYCLE_MS;
     const sunHeight = Math.sin(dayNight.time * Math.PI * 2);
     const dayFactor = Math.max(0, sunHeight);
 
