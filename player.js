@@ -152,6 +152,10 @@ export class Player {
 
     toggleThirdPerson() {
         this.thirdPerson = !this.thirdPerson;
+        if (this.thirdPerson) {
+            // Seed physicsPos from current camera so first frame doesn't jump
+            this.physicsPos.copy(this.camera.position);
+        }
         if (this.selfGroup) this.selfGroup.visible = this.thirdPerson;
         // Hide first-person hand in third-person
         if (this.handGroup) this.handGroup.visible = !this.thirdPerson;
@@ -875,10 +879,21 @@ export class Player {
         this.updateMining(dt);
         this.updateSurvival(dt);
         this.updateHandAnimation(dt);
+
+        // In third-person, restore camera to true physics position before any physics runs
+        if (this.thirdPerson && this.selfGroup) {
+            this.camera.position.copy(this.physicsPos);
+        }
+
         if (this.waypointManager) this.waypointManager.update(dt, this.camera.position);
 
-        if (!this.controls.isLocked || !this.alive) return;
+        if (!this.controls.isLocked || !this.alive) {
+            // Still update selfGroup position even when not locked
+            if (this.thirdPerson && this.selfGroup) this._renderThirdPerson();
+            return;
+        }
 
+        // ── Swimming detection ────────────────────────────────────────────────
         const feetBlock = this.world.getBlock(
             Math.floor(this.camera.position.x),
             Math.floor(this.camera.position.y - this.height + 0.4),
@@ -890,77 +905,120 @@ export class Player {
         if (!wasSwimming && this.isSwimming) {
             audio.playSplash();
             if (this.particleManager) {
-                this.particleManager.spawnSplash(this.camera.position.x, this.camera.position.y - 1, this.camera.position.z);
+                this.particleManager.spawnSplash(
+                    this.camera.position.x,
+                    this.camera.position.y - 1,
+                    this.camera.position.z
+                );
             }
         }
 
-        const friction = this.isSwimming ? 4.0 : 10.0;
-        this.velocity.x -= this.velocity.x * friction * dt;
-        this.velocity.z -= this.velocity.z * friction * dt;
+        // ── Direction vectors ─────────────────────────────────────────────────
+        const forward = new THREE.Vector3();
+        this.camera.getWorldDirection(forward);
+        const forwardFlat = forward.clone();
+        forwardFlat.y = 0;
+        if (forwardFlat.lengthSq() > 0.0001) forwardFlat.normalize();
+        else forwardFlat.set(0, 0, -1);
 
-        if (this.isSwimming) {
-            // Buoyancy & water drag
-            this.velocity.y += 1.5 * dt; // gentle float
-            if (this.keys.Space) this.velocity.y = Math.min(this.velocity.y + 18 * dt, 4.0);
+        const right = new THREE.Vector3().crossVectors(forwardFlat, new THREE.Vector3(0, 1, 0)).normalize();
+
+        const moveVec = new THREE.Vector3();
+        if (this.keys.KeyW) moveVec.add(forwardFlat);
+        if (this.keys.KeyS) moveVec.sub(forwardFlat);
+        if (this.keys.KeyD) moveVec.add(right);
+        if (this.keys.KeyA) moveVec.sub(right);
+        if (moveVec.lengthSq() > 0.0001) moveVec.normalize();
+
+        const friction = this.isSwimming ? 4.0 : 10.0;
+
+        // ── FLY MODE ──────────────────────────────────────────────────────────
+        if (this.isFlying) {
+            const flyAccel = 24.0;   // m/s² acceleration
+            const flyDrag  = 9.0;    // drag coefficient
+            const flyMaxH  = 22.0;   // max horizontal speed
+            const flyMaxV  = 16.0;   // max vertical speed
+
+            // Horizontal
+            if (moveVec.lengthSq() > 0) {
+                this.velocity.x += moveVec.x * flyAccel * dt;
+                this.velocity.z += moveVec.z * flyAccel * dt;
+            }
+            // Clamp horizontal
+            const hSpeed = Math.sqrt(this.velocity.x ** 2 + this.velocity.z ** 2);
+            if (hSpeed > flyMaxH) {
+                const scale = flyMaxH / hSpeed;
+                this.velocity.x *= scale;
+                this.velocity.z *= scale;
+            }
+            // Drag
+            this.velocity.x *= Math.max(0, 1 - flyDrag * dt);
+            this.velocity.z *= Math.max(0, 1 - flyDrag * dt);
+
+            // Vertical
+            if (this.keys.Space) {
+                this.velocity.y = Math.min(this.velocity.y + flyAccel * dt, flyMaxV);
+            } else if (this.keys.ShiftLeft) {
+                this.velocity.y = Math.max(this.velocity.y - flyAccel * dt, -flyMaxV);
+            } else {
+                // Hover: damp Y to zero quickly
+                this.velocity.y *= Math.max(0, 1 - flyDrag * 1.4 * dt);
+                if (Math.abs(this.velocity.y) < 0.05) this.velocity.y = 0;
+            }
+
+            this.fallStartY = null;
+            this.onGround = false;
+
+            this.camera.position.x += this.velocity.x * dt;
+            this.camera.position.y += this.velocity.y * dt;
+            this.camera.position.z += this.velocity.z * dt;
+
+        // ── SWIMMING ──────────────────────────────────────────────────────────
+        } else if (this.isSwimming) {
+            this.velocity.x -= this.velocity.x * friction * dt;
+            this.velocity.z -= this.velocity.z * friction * dt;
+
+            this.velocity.y += 1.5 * dt; // buoyancy
+            if (this.keys.Space)     this.velocity.y = Math.min(this.velocity.y + 18 * dt,  4.0);
             if (this.keys.ShiftLeft) this.velocity.y = Math.max(this.velocity.y - 18 * dt, -4.0);
             this.velocity.y *= (1 - 3.5 * dt);
             this.fallStartY = null;
 
-            // 3D Pitch Swimming when pressing W
+            // 3D pitch-swimming
             if (this.keys.KeyW) {
                 const dir3D = new THREE.Vector3();
                 this.camera.getWorldDirection(dir3D);
                 this.velocity.y += dir3D.y * 6.0 * dt;
             }
+
+            let swimSpeed = this.baseSpeed * 0.55;
+            if (moveVec.lengthSq() > 0) {
+                this.velocity.x += moveVec.x * swimSpeed * friction * dt;
+                this.velocity.z += moveVec.z * swimSpeed * friction * dt;
+            }
+            this.checkCollisions(dt);
+
+        // ── GROUND / AIR ──────────────────────────────────────────────────────
         } else {
+            this.velocity.x -= this.velocity.x * friction * dt;
+            this.velocity.z -= this.velocity.z * friction * dt;
             this.velocity.y -= this.gravity * dt;
-        }
 
-        const forward = new THREE.Vector3();
-        this.camera.getWorldDirection(forward);
-        forward.y = 0;
-        if (forward.lengthSq() > 0.0001) forward.normalize();
-        else forward.set(0, 0, -1);
+            let speed = this.baseSpeed;
+            if (this.isSprinting) speed *= 1.55;
+            if (this.isCrouching) speed *= 0.3;
 
-        const right = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
-
-        const moveVec = new THREE.Vector3();
-        if (this.keys.KeyW) moveVec.add(forward);
-        if (this.keys.KeyS) moveVec.sub(forward);
-        if (this.keys.KeyD) moveVec.add(right);
-        if (this.keys.KeyA) moveVec.sub(right);
-        if (moveVec.lengthSq() > 0.0001) moveVec.normalize();
-
-        let speed = this.baseSpeed;
-        if (this.isSprinting) speed *= 1.55;
-        if (this.isCrouching) speed *= 0.3;
-        if (this.isSwimming) speed *= 0.55;
-        if (this.isFlying) speed *= 2.0;
-
-        if (this.isFlying) {
-            // Creative Flight Physics
-            this.velocity.x += moveVec.x * speed * friction * dt;
-            this.velocity.z += moveVec.z * speed * friction * dt;
-            if (this.keys.Space) this.velocity.y = Math.min(this.velocity.y + 28 * dt, 14.0);
-            else if (this.keys.ShiftLeft) this.velocity.y = Math.max(this.velocity.y - 28 * dt, -14.0);
-            else this.velocity.y *= (1 - 8.0 * dt);
-            this.velocity.x *= (1 - 8.0 * dt);
-            this.velocity.z *= (1 - 8.0 * dt);
-            this.fallStartY = null;
-            this.onGround = false;
-            this.camera.position.x += this.velocity.x * dt;
-            this.camera.position.y += this.velocity.y * dt;
-            this.camera.position.z += this.velocity.z * dt;
-        } else {
-            if (this.keys.KeyW || this.keys.KeyA || this.keys.KeyS || this.keys.KeyD) {
+            if (moveVec.lengthSq() > 0) {
                 this.velocity.x += moveVec.x * speed * friction * dt;
                 this.velocity.z += moveVec.z * speed * friction * dt;
             }
-            if (this.keys.Space && this.onGround && !this.isSwimming) {
+
+            if (this.keys.Space && this.onGround) {
                 this.velocity.y = this.jumpSpeed;
                 this.onGround = false;
                 this.fallStartY = this.camera.position.y;
             }
+
             this.checkCollisions(dt);
         }
 
@@ -968,11 +1026,56 @@ export class Player {
             this.damage(100);
         }
 
-        // Third-person camera & self mesh
+        // ── Third-person: save true physics pos, then offset camera ──────────
         if (this.thirdPerson && this.selfGroup) {
-            this._updateThirdPersonCamera();
+            this.physicsPos.copy(this.camera.position);
+            this._renderThirdPerson();
         }
     }
+
+    // Separate rendering step for third-person so physics always uses true pos
+    _renderThirdPerson() {
+        // Build backward offset using camera's current yaw
+        const forward = new THREE.Vector3();
+        this.camera.getWorldDirection(forward);
+        forward.y = 0;
+        if (forward.lengthSq() < 0.001) forward.set(0, 0, -1);
+        forward.normalize();
+
+        // Camera goes behind & slightly above the physics position
+        const dist = this.thirdPersonDist;
+        const targetCamPos = new THREE.Vector3(
+            this.physicsPos.x - forward.x * dist,
+            this.physicsPos.y + dist * 0.45,
+            this.physicsPos.z - forward.z * dist
+        );
+
+        // Smooth lerp — snappier than before so it tracks better
+        this.camera.position.lerp(targetCamPos, Math.min(1, 14 * (1 / 60)));
+
+        // Clamp so camera never goes underground
+        const groundY = this.physicsPos.y - this.height;
+        if (this.camera.position.y < groundY + 0.5) {
+            this.camera.position.y = groundY + 0.5;
+        }
+
+        // Place self mesh at feet
+        this.selfGroup.position.set(
+            this.physicsPos.x,
+            this.physicsPos.y - this.height,
+            this.physicsPos.z
+        );
+        // Face away from camera (show the back)
+        this.selfGroup.rotation.y = this.camera.rotation.y + Math.PI;
+
+        // Walk animation — swing the whole group
+        const isMoving = this.keys.KeyW || this.keys.KeyA || this.keys.KeyS || this.keys.KeyD;
+        if (isMoving) {
+            const t = Date.now() * 0.007;
+            this.selfGroup.position.y += Math.abs(Math.sin(t * 2)) * 0.04; // bounce
+        }
+    }
+
 
     teleportToCastle() {
         // Castle/Hub spawn point
