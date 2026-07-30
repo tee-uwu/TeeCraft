@@ -1,6 +1,6 @@
 // Supabase Authentication & Cloud Progress Saver
 const SUPABASE_URL = 'https://ikrjclzzvlwqofrkdihp.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInRefiI6ImlrcmpjbHp6dmx3cW9mcmtkaWhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0MjgzNzAsImV4cCI6MjEwMTAwNDM3MH0.0Hm4xdTvIqHNwXp6S4Gga31AwTbzQ268KV66VXnnBLg';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlrcmpjbHp6dmx3cW9mcmtkaWhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0MjgzNzAsImV4cCI6MjEwMTAwNDM3MH0.0Hm4xdTvIqHNwXp6S4Gga31AwTbzQ268KV66VXnnBLg';
 
 export let supabase = null;
 
