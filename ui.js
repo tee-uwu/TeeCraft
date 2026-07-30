@@ -2,7 +2,7 @@ import { uiIcons } from './textures.js';
 import { ITEMS, FOOD } from './items.js';
 import { matchRecipe, consumeGrid } from './crafting.js';
 import { audio } from './audio.js';
-import { getCurrentUser, signIn, signUp, signOut, signInWithGoogle, loadProgressFromCloud } from './auth.js';
+import { getCurrentUser, signIn, signUp, signOut, signInWithGoogle, loadProgressFromCloud, listenToAuthChanges } from './auth.js';
 
 const HOTBAR_SIZE = 9;
 
@@ -1048,6 +1048,10 @@ class UI {
                 }
             });
         }
+
+        listenToAuthChanges(async (user) => {
+            await this.checkMainAuthStatus();
+        });
 
         const googleBtn = document.getElementById('main-auth-google');
         if (googleBtn) {
