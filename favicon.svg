@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- 3D Voxel Grass Block Top -->
+  <polygon points="32,4 58,18 32,32 6,18" fill="#55ff55" stroke="#228822" stroke-width="2"/>
+  <!-- Left Side Dirt -->
+  <polygon points="6,18 32,32 32,60 6,46" fill="#8b5a2b" stroke="#4a2e16" stroke-width="2"/>
+  <!-- Right Side Dirt -->
+  <polygon points="32,32 58,18 58,46 32,60" fill="#663f1c" stroke="#331e0b" stroke-width="2"/>
+  <!-- Pixel Grass Overhang -->
+  <polygon points="6,18 14,22 14,27 6,22" fill="#33aa33"/>
+  <polygon points="14,22 22,26 22,31 14,27" fill="#44cc44"/>
+  <polygon points="22,26 32,32 32,37 22,31" fill="#33aa33"/>
+  <polygon points="32,32 42,27 42,32 32,37" fill="#44cc44"/>
+  <polygon points="42,27 50,22 50,27 42,32" fill="#33aa33"/>
+  <polygon points="50,22 58,18 58,23 50,27" fill="#44cc44"/>
+  <!-- Glowing Diamond Gem Accent -->
+  <polygon points="32,10 40,18 32,25 24,18" fill="#00ffff"/>
+  <polygon points="32,12 37,18 32,22 27,18" fill="#ffffff" opacity="0.8"/>
+</svg>
