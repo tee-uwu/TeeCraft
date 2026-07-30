@@ -4,6 +4,7 @@
   "description": "TEEcraft 3D WebGL Minecraft-style Voxel Game",
   "main": "main.js",
   "scripts": {
+    "build": "echo Static site ready",
     "start": "npx http-server -p 8080"
   }
 }
