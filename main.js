@@ -9,6 +9,7 @@ import { ParticleManager } from './particles.js';
 import { hasSave, loadGame, clearSave, applySaveToWorld, applySaveToPlayer, saveGame } from './save.js';
 import { showMinimap, hideMinimap, updateMinimap } from './minimap.js';
 import { initSchematics } from './schematics.js';
+import { MultiplayerManager } from './multiplayer.js';
 
 // --- 1. Scene & Core Setup ---
 const scene = new THREE.Scene();
@@ -77,6 +78,22 @@ if (existingSave) {
 
 const dayNight = { time: existingSave && typeof existingSave.time === 'number' ? existingSave.time : 0.28 };
 const DAY_LENGTH = 600; // seconds for a full day/night cycle
+
+const multiplayer = new MultiplayerManager(scene, world, player);
+
+const manualSaveBtn = document.getElementById('manual-save-btn');
+if (manualSaveBtn) {
+    manualSaveBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const ok = saveGame(world, player, dayNight);
+        const toast = document.getElementById('save-toast');
+        if (toast) {
+            toast.textContent = ok ? '✅ Game Saved to Supabase Cloud & Local Storage!' : '❌ Save Failed';
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 3500);
+        }
+    });
+}
 
 player.onSleep = () => {
     // Only sleep if it's night (time is between 0.45 and 0.95 roughly)
@@ -287,6 +304,7 @@ function animate() {
         entityManager.update(dt, player);
     }
     particleManager.update(dt);
+    multiplayer.update(dt);
 
     ui.tick(dt);
     ui.updateCoords(player, mobManager, entityManager);

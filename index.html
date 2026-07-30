@@ -53,18 +53,21 @@
                 </form>
 
                 <!-- Logged In Card -->
-                <div id="main-user-card" class="hidden">
+                <div id="main-user-card" class="hidden" style="margin-top: 10px;">
                     <p class="user-welcome">WELCOME, <span id="user-email-tag" style="color:#ffff55;">PLAYER</span>!</p>
-                    <p class="cloud-status">☁️ Supabase Cloud Auto-Sync Enabled</p>
-                    <div class="menu-buttons" style="margin-bottom:12px;">
+                    <p class="cloud-status">☁️ Supabase Cloud Auto-Sync & Realtime Multiplayer Ready</p>
+                    <div class="menu-buttons" style="margin-bottom:14px; gap: 8px;">
                         <button id="continue-btn" class="mc-btn hidden">Continue Saved Game</button>
                         <button id="new-world-btn" class="mc-btn hidden">New World</button>
+                        <button id="manual-save-btn" class="mc-btn" style="background:#059669 !important;">Save Game 💾</button>
                         <button id="auth-logout-btn" class="mc-btn" style="background:#b91c1c !important;">Sign Out 🚪</button>
                         <button id="settings-btn" class="mc-btn">Settings ⚙️</button>
                     </div>
                     <p id="play-hint" class="mc-btn" style="background:#16a34a !important; width:260px; margin:0 auto;">Click to Play Game</p>
                 </div>
             </div>
+
+            <div id="save-toast" class="save-toast hidden">✅ Game Saved to Supabase Cloud & Local Storage!</div>
 
             <div class="controls mc-controls">
                 <span class="ctrl-title">CONTROLS</span><br>
