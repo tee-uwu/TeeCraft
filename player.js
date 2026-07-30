@@ -78,12 +78,124 @@ export class Player {
         this._buildTargetOutline();
 
         ui.attach(this);
+
+        // ── Third-Person / POV mode ──────────────────────────────────────
+        this.thirdPerson = false;
+        this.thirdPersonDist = 4.5;  // camera distance behind player
+        this.physicsPos = new THREE.Vector3(); // tracks true head position
+        this.selfGroup = null;        // own 3D player mesh shown in 3rd person
+        this._initSelfMesh();
     }
 
     _giveStarterItems() {
         this.inventory.addItem('wood_pickaxe', 1);
         this.inventory.addItem('wood_axe', 1);
         this.inventory.addItem('wood_sword', 1);
+    }
+
+    // ── Self mesh (shown in third-person POV) ─────────────────────────────────
+    _initSelfMesh() {
+        const group = new THREE.Group();
+
+        const skinMat  = new THREE.MeshLambertMaterial({ color: 0xd4a373 });
+        const shirtMat = new THREE.MeshLambertMaterial({ color: 0x2563eb });
+        const pantsMat = new THREE.MeshLambertMaterial({ color: 0x1e3a8a });
+
+        // Head
+        const head = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.5), skinMat);
+        head.position.y = 1.4;
+        group.add(head);
+
+        // Body
+        const body = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.7, 0.3), shirtMat);
+        body.position.y = 0.8;
+        group.add(body);
+
+        // Arms
+        const armGeo = new THREE.BoxGeometry(0.22, 0.65, 0.22);
+        const rArm = new THREE.Mesh(armGeo, skinMat);
+        rArm.position.set(-0.36, 0.82, 0);
+        group.add(rArm);
+        const lArm = new THREE.Mesh(armGeo, skinMat);
+        lArm.position.set(0.36, 0.82, 0);
+        group.add(lArm);
+
+        // Legs
+        const legGeo = new THREE.BoxGeometry(0.22, 0.75, 0.25);
+        const rLeg = new THREE.Mesh(legGeo, pantsMat);
+        rLeg.position.set(-0.13, 0.08, 0);
+        group.add(rLeg);
+        const lLeg = new THREE.Mesh(legGeo, pantsMat);
+        lLeg.position.set(0.13, 0.08, 0);
+        group.add(lLeg);
+
+        group.visible = false; // hidden in first-person
+        this.scene.add(group);
+        this.selfGroup = group;
+
+        // Try to apply own skin if already set in localStorage
+        const skinData = localStorage.getItem('teecraft_skin_data');
+        if (skinData) this._applySkinToSelf(skinData);
+    }
+
+    async _applySkinToSelf(dataUrl) {
+        try {
+            // Dynamic import to avoid circular deps
+            const { buildSkinnedPlayer, loadSkinImage } = await import('./skin.js');
+            const img = await loadSkinImage(dataUrl);
+            const skinnedGroup = buildSkinnedPlayer(img);
+            // Replace plain mesh children with skinned ones
+            while (this.selfGroup.children.length) this.selfGroup.remove(this.selfGroup.children[0]);
+            this.selfGroup.add(skinnedGroup);
+        } catch (e) { /* keep default mesh */ }
+    }
+
+    toggleThirdPerson() {
+        this.thirdPerson = !this.thirdPerson;
+        if (this.selfGroup) this.selfGroup.visible = this.thirdPerson;
+        // Hide first-person hand in third-person
+        if (this.handGroup) this.handGroup.visible = !this.thirdPerson;
+        return this.thirdPerson;
+    }
+
+    _updateThirdPersonCamera() {
+        // Save true physics (head) position
+        this.physicsPos.copy(this.camera.position);
+
+        // Compute backward direction from camera yaw
+        const forward = new THREE.Vector3();
+        this.camera.getWorldDirection(forward);
+        forward.y = 0;
+        forward.normalize();
+
+        // Camera goes behind & above player
+        const camOffset = forward.clone().multiplyScalar(-this.thirdPersonDist);
+        camOffset.y = this.thirdPersonDist * 0.55;
+
+        const newCamPos = this.physicsPos.clone().add(camOffset);
+        // Smooth camera transition
+        this.camera.position.lerp(newCamPos, 0.18);
+
+        // Place self mesh at feet (physicsPos - height)
+        const feetY = this.physicsPos.y - this.height;
+        this.selfGroup.position.set(this.physicsPos.x, feetY, this.physicsPos.z);
+
+        // Rotate self mesh to face same direction as camera
+        this.selfGroup.rotation.y = this.camera.rotation.y + Math.PI;
+
+        // Animate walking arms/legs
+        const moving = this.keys.KeyW || this.keys.KeyA || this.keys.KeyS || this.keys.KeyD;
+        if (moving) {
+            const t = Date.now() * 0.006;
+            // Swing arms and legs
+            const children = this.selfGroup.children[0]
+                ? this.selfGroup.children[0].children
+                : this.selfGroup.children;
+            // Just rotate the whole group slightly for a walk bob
+            this.selfGroup.rotation.z = Math.sin(t) * 0.02;
+        } else {
+            this.selfGroup.rotation.z = 0;
+        }
     }
 
     _buildTargetOutline() {
@@ -854,6 +966,11 @@ export class Player {
 
         if (this.camera.position.y < -10 && this.alive) {
             this.damage(100);
+        }
+
+        // Third-person camera & self mesh
+        if (this.thirdPerson && this.selfGroup) {
+            this._updateThirdPersonCamera();
         }
     }
 

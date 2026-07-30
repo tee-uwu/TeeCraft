@@ -111,6 +111,22 @@ function runCommand(raw) {
                 ? '🕊️ FLY MODE ON — Space to ascend, Shift to descend!'
                 : '🦶 FLY MODE OFF — Back on the ground!';
 
+        case 'pov':
+        case '/pov':
+        case 'thirdperson':
+        case 'f5': {
+            if (!_player) return '❌ Game not loaded yet.';
+            const on = _player.toggleThirdPerson();
+            // Refresh own skin on the self mesh if skin was uploaded after init
+            if (on) {
+                const skinData = localStorage.getItem('teecraft_skin_data');
+                if (skinData && _player.selfGroup) _player._applySkinToSelf(skinData);
+            }
+            return on
+                ? '👁️ THIRD-PERSON ON — See yourself from others\' perspective! (type pov again to go back)'
+                : '🎯 FIRST-PERSON ON — Back to normal view!';
+        }
+
         case 'god':
         case 'godmode':
             cheats.godMode = !cheats.godMode;
@@ -186,6 +202,7 @@ function runCommand(raw) {
                 '',
                 '⚡ CHEATS:',
                 '  fly           → Toggle creative flight (Space=up, Shift=down)',
+                '  pov           → Toggle third-person view (see yourself!)',
                 '  god           → Toggle invincibility',
                 '  heal          → Restore health & hunger',
                 '  kill          → Kill yourself',
