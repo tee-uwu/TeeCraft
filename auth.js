@@ -47,7 +47,7 @@ export async function signIn(email, password) {
 
 export async function signInWithGoogle() {
     if (!supabase) return { error: { message: 'Supabase SDK not loaded' } };
-    const redirectUrl = window.location.origin + window.location.pathname;
+    const redirectUrl = window.location.origin;
     const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {

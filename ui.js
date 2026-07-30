@@ -697,6 +697,7 @@ class UI {
     }
 
     openSettings() {
+        this.closeAllScreens();
         this.screen = 'settings';
         this.isInventoryOpen = true;
         this.settingsEl.classList.remove('hidden');
@@ -1076,6 +1077,14 @@ class UI {
                     if (msgDiv) msgDiv.textContent = 'Account created! Try signing in or check email.';
                     await this.checkMainAuthStatus();
                 }
+            });
+        }
+
+        const settingsBtn = document.getElementById('settings-btn');
+        if (settingsBtn) {
+            settingsBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.openSettings();
             });
         }
 
