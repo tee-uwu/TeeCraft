@@ -27,6 +27,70 @@ canvas { display: block; }
     pointer-events: auto;
 }
 
+/* ── In-game Chat ─────────────────────────────────────────────────────── */
+.chat-log {
+    position: absolute;
+    bottom: 90px;
+    left: 14px;
+    width: 380px;
+    max-height: 160px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    pointer-events: none;
+    z-index: 900;
+}
+
+.chat-msg {
+    background: rgba(0, 0, 0, 0.52);
+    color: #fff;
+    font-family: 'Silkscreen', monospace;
+    font-size: 11px;
+    padding: 4px 8px;
+    border-radius: 3px;
+    border-left: 3px solid #55ffff;
+    animation: chatFadeIn 0.2s ease;
+    transition: opacity 0.5s;
+    max-width: 100%;
+    word-break: break-word;
+}
+
+.chat-msg .chat-author {
+    color: #ffff55;
+    margin-right: 6px;
+}
+
+.chat-bar {
+    position: absolute;
+    bottom: 48px;
+    left: 14px;
+    width: 420px;
+    display: flex;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.75);
+    border: 2px solid #55ffff;
+    padding: 4px 10px;
+    z-index: 2200;
+    pointer-events: auto;
+}
+
+.chat-bar input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #fff;
+    font-family: 'Silkscreen', monospace;
+    font-size: 12px;
+    caret-color: #55ffff;
+}
+
+@keyframes chatFadeIn {
+    from { opacity: 0; transform: translateX(-6px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
 .console-panel {
     position: absolute;
     top: 30%; left: 50%;
