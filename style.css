@@ -685,6 +685,21 @@ canvas { display: block; }
     padding: 8px 14px !important;
 }
 
+.skin-namemc-link {
+    display: inline-block;
+    margin: 4px 0;
+    color: #55ffff;
+    font-weight: bold;
+    font-size: 12px;
+    text-decoration: none;
+    border-bottom: 2px solid #55ffff55;
+    transition: color 0.2s, border-color 0.2s;
+}
+.skin-namemc-link:hover {
+    color: #ffff55;
+    border-color: #ffff55;
+}
+
 .setting-row input[type="range"] {
     width: 150px;
 }
