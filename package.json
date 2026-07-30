@@ -1,0 +1,9 @@
+{
+  "name": "teecraft",
+  "version": "3.0.0",
+  "description": "TEEcraft 3D WebGL Minecraft-style Voxel Game",
+  "main": "main.js",
+  "scripts": {
+    "start": "npx http-server -p 8080"
+  }
+}

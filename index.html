@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TEEcraft v3.0</title>
+    <!-- Supabase JS SDK CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Authentic Minecraft & Game Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Silkscreen:wght@400;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./style.css">
+    <!-- Import maps polyfill for older browser support -->
+    <script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
+    <!-- Import map to load Three.js and SimplexNoise directly from a CDN -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/",
+                "simplex-noise": "https://unpkg.com/simplex-noise@4.0.1/dist/esm/simplex-noise.js"
+            }
+        }
+    </script>
+</head>
+<body>
+    <div id="game-ui">
+        <!-- Start Screen -->
+        <div id="blocker">
+            <div class="logo-container">
+                <h1 class="mc-title">TEECRAFT</h1>
+                <div class="splash-text">Also with Castle & Big Farm!</div>
+            </div>
+            <p id="play-hint" class="mc-btn">Click to Play</p>
+            <div class="menu-buttons">
+                <button id="continue-btn" class="mc-btn hidden">Continue</button>
+                <button id="new-world-btn" class="mc-btn hidden">New World</button>
+                <button id="account-btn" class="mc-btn">Account 👤</button>
+                <button id="settings-btn" class="mc-btn">Settings</button>
+            </div>
+            <div class="controls mc-controls">
+                <span class="ctrl-title">CONTROLS</span><br>
+                <b>WASD</b> to Move &nbsp;|&nbsp; <b>Space</b> Jump &nbsp;|&nbsp; <b>Shift</b> Swim / Sneak<br>
+                <b>Left-Click</b>: Mine / Attack &nbsp;|&nbsp; <b>Right-Click</b>: Place / Use<br>
+                <b>1-9</b>: Hotbar &nbsp;|&nbsp; <b>E</b>: Inventory &nbsp;|&nbsp; <b>B</b>: Waypoints &nbsp;|&nbsp; <b>F</b>: Eat &nbsp;|&nbsp; <b>F3</b>: Debug
+            </div>
+        </div>
+        </div>
+
+        <!-- Account / Auth Modal -->
+        <div id="auth-modal" class="hidden panel" style="width:340px;">
+            <h2 id="auth-title">Account Login</h2>
+            <div id="auth-user-info" class="hidden" style="text-align:center; margin-bottom:15px;">
+                <p style="color:#55ffff; font-size:12px; margin-bottom:8px;">LOGGED IN AS:</p>
+                <p id="auth-email-display" style="color:#ffff55; font-size:11px; word-break:break-all;"></p>
+                <p style="color:#a855f7; font-size:10px; margin-top:8px;">☁️ Cloud Auto-Sync Active</p>
+                <button id="auth-logout-btn" class="mc-btn" style="margin-top:14px; background:#b91c1c !important;">Sign Out</button>
+            </div>
+            <form id="auth-form" style="display:flex; flex-direction:column; gap:12px;">
+                <div>
+                    <label style="display:block; color:#ffaa00; font-size:10px; margin-bottom:4px;">EMAIL ADDRESS</label>
+                    <input type="email" id="auth-email" placeholder="player@example.com" required style="width:100%; padding:10px; box-sizing:border-box; background:#1e182a; border:2px solid #555; color:white; font-family:inherit; font-size:12px;">
+                </div>
+                <div>
+                    <label style="display:block; color:#ffaa00; font-size:10px; margin-bottom:4px;">PASSWORD</label>
+                    <input type="password" id="auth-password" placeholder="••••••••" required style="width:100%; padding:10px; box-sizing:border-box; background:#1e182a; border:2px solid #555; color:white; font-family:inherit; font-size:12px;">
+                </div>
+                <div id="auth-msg" style="color:#ef4444; font-size:10px; text-align:center; min-height:16px;"></div>
+                <div style="display:flex; gap:8px; justify-content:center;">
+                    <button type="submit" id="auth-login-btn" class="mc-btn" style="flex:1;">Sign In</button>
+                    <button type="button" id="auth-signup-btn" class="mc-btn" style="flex:1; background:#2563eb !important;">Sign Up</button>
+                </div>
+            </form>
+            <p class="close-hint">Press Esc to close</p>
+        </div>
+
+        <!-- Crosshair -->
+        <div id="crosshair"></div>
+
+        <!-- Underwater Visual Effect Overlay -->
+        <div id="underwater-overlay" class="hidden"></div>
+
+        <!-- Coordinates & Orientation HUD -->
+        <div id="coords-hud">
+            <div id="coords-pos">XYZ: 0 / 0 / 0</div>
+            <div id="coords-facing">Facing: North (-Z)</div>
+            <div id="coords-debug" class="hidden">Chunk: 0, 0 | Entities: 0</div>
+        </div>
+
+        <!-- Minimap -->
+        <canvas id="minimap" width="128" height="128"></canvas>
+
+        <!-- Mining progress -->
+        <div id="mining-progress">
+            <div id="mining-progress-fill"></div>
+        </div>
+
+        <!-- Vitals HUD -->
+        <div id="vitals-hud">
+            <div id="hunger" class="vital-row"></div>
+            <div id="hearts" class="vital-row"></div>
+        </div>
+        <div id="breath-bar" class="vital-row"></div>
+
+        <!-- XP Bar -->
+        <div id="xp-bar-container">
+            <div id="xp-bar-fill"></div>
+            <div id="xp-level-text"></div>
+        </div>
+
+        <!-- Hotbar -->
+        <div id="hotbar"></div>
+
+        <!-- Inventory Screen -->
+        <div id="inventory-screen" class="hidden panel">
+            <h2>Inventory</h2>
+        </div>
+
+        <!-- Crafting Table Screen -->
+        <div id="crafting-table-screen" class="hidden panel"></div>
+
+        <!-- Furnace Screen -->
+        <div id="furnace-screen" class="hidden panel"></div>
+
+        <!-- Chest Screen -->
+        <div id="chest-screen" class="hidden panel"></div>
+
+        <!-- Enchanting Table Screen -->
+        <div id="enchanting-screen" class="hidden panel"></div>
+
+        <!-- Waypoint Screen -->
+        <div id="waypoint-screen" class="hidden panel">
+            <h2>Waypoints</h2>
+            <div style="display:flex; gap:8px; margin-bottom:14px;">
+                <input type="text" id="wp-name-input" placeholder="Waypoint Name" style="padding:8px; border-radius:4px; border:1px solid #777; background:#111; color:white; font-family:inherit; flex:1;">
+                <button id="add-wp-btn" style="padding:8px 14px; background:#8b5cf6; color:white; border:none; border-radius:4px; cursor:pointer;">Save Here</button>
+            </div>
+            <div id="wp-list" style="max-height:160px; overflow-y:auto; display:flex; flex-direction:column; gap:6px;"></div>
+            <p class="close-hint">Press B or Esc to close</p>
+        </div>
+
+        <!-- Settings Screen -->
+        <div id="settings-screen" class="hidden panel settings-panel">
+            <h2>Settings</h2>
+            <div class="setting-row">
+                <label>Master Volume:</label>
+                <input type="range" id="volume-slider" min="0" max="1" step="0.05" value="0.5">
+            </div>
+            <div class="setting-row">
+                <label>Render Distance (Chunks):</label>
+                <input type="range" id="render-dist-slider" min="3" max="10" step="1" value="6">
+                <span id="render-dist-val">6</span>
+            </div>
+            <div class="setting-row">
+                <label>Mouse Sensitivity:</label>
+                <input type="range" id="sens-slider" min="0.1" max="5.0" step="0.1" value="1.0">
+                <span id="sens-val">1.0</span>
+            </div>
+            <button id="close-settings-btn" style="margin-top:20px; padding: 10px 20px;">Done</button>
+        </div>
+
+        <!-- Death Screen -->
+        <div id="death-screen" class="hidden">
+            <h1>You Died</h1>
+            <button id="respawn-btn">Respawn</button>
+        </div>
+
+        <!-- Tooltip -->
+        <div id="tooltip" class="hidden"></div>
+
+        <!-- Floating cursor item (drag/drop between slots) -->
+        <div id="cursor-item">
+            <img src="" alt="">
+            <div class="slot-count"></div>
+        </div>
+    </div>
+
+    <!-- Our main game logic -->
+    <script type="module" src="./main.js"></script>
+</body>
+</html>
