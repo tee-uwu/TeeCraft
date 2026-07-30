@@ -30,6 +30,17 @@ export async function signIn(email, password) {
     return { data, error };
 }
 
+export async function signInWithGoogle() {
+    if (!supabase) return { error: { message: 'Supabase SDK not loaded' } };
+    const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+            redirectTo: window.location.origin
+        }
+    });
+    return { data, error };
+}
+
 export async function signOut() {
     if (!supabase) return;
     await supabase.auth.signOut();
