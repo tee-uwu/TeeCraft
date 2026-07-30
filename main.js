@@ -236,7 +236,7 @@ const RAIN_COLOR = new THREE.Color('#4a5e6d');
 const _skyColor = new THREE.Color();
 
 function updateDayNight(dt) {
-    dayNight.time = (dayNight.time + dt / DAY_LENGTH) % 1;
+    dayNight.time = 0.28; // Locked static bright daytime for all multiplayer players
     const sunHeight = Math.sin(dayNight.time * Math.PI * 2);
     const dayFactor = Math.max(0, sunHeight);
 
