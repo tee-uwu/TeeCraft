@@ -1069,8 +1069,11 @@ class UI {
                 const { data, error } = await signUp(email, password);
                 if (error) {
                     if (msgDiv) msgDiv.textContent = error.message;
+                } else if (data && data.session) {
+                    if (msgDiv) msgDiv.textContent = 'Account created & logged in!';
+                    await this.checkMainAuthStatus();
                 } else {
-                    if (msgDiv) msgDiv.textContent = 'Account created! Logged in.';
+                    if (msgDiv) msgDiv.textContent = 'Account created! Try signing in or check email.';
                     await this.checkMainAuthStatus();
                 }
             });

@@ -20,7 +20,22 @@ export async function getCurrentUser() {
 
 export async function signUp(email, password) {
     if (!supabase) return { error: { message: 'Supabase SDK not loaded' } };
-    const { data, error } = await supabase.auth.signUp({ email, password });
+    const redirectUrl = window.location.origin + window.location.pathname;
+    const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+            emailRedirectTo: redirectUrl
+        }
+    });
+
+    if (!error && data && !data.session) {
+        // Try auto-login in case email confirmation is turned off in Supabase
+        const loginRes = await supabase.auth.signInWithPassword({ email, password });
+        if (!loginRes.error && loginRes.data.session) {
+            return { data: loginRes.data, error: null };
+        }
+    }
     return { data, error };
 }
 
