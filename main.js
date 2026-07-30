@@ -12,6 +12,7 @@ import { initSchematics } from './schematics.js';
 import { MultiplayerManager } from './multiplayer.js';
 import { initCommands, cheats } from './commands.js';
 import { AmbientManager } from './ambient.js';
+import { uploadSkin, loadMySkin, clearSkinCache } from './skin.js';
 
 // --- 1. Scene & Core Setup ---
 const scene = new THREE.Scene();
@@ -113,6 +114,68 @@ player.onSleep = () => {
     }
 };
 
+// ─── Skin UI ─────────────────────────────────────────────────────────────────
+function drawSkinPreview(dataUrl) {
+    const canvas = document.getElementById('skin-preview-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+    const img = new Image();
+    img.onload = () => {
+        ctx.clearRect(0, 0, 64, 64);
+        ctx.drawImage(img, 0, 0, 64, 64);
+    };
+    img.src = dataUrl;
+}
+
+// Load existing skin preview on open
+loadMySkin().then(dataUrl => {
+    if (dataUrl) {
+        drawSkinPreview(dataUrl);
+        const st = document.getElementById('skin-status');
+        if (st) st.textContent = '✅ Custom skin active';
+    }
+});
+
+const skinFileInput = document.getElementById('skin-file-input');
+if (skinFileInput) {
+    skinFileInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const msg = document.getElementById('skin-upload-msg');
+        const st  = document.getElementById('skin-status');
+        if (msg) msg.textContent = '⏳ Uploading skin…';
+        if (st) st.textContent = 'Uploading…';
+
+        const result = await uploadSkin(file);
+
+        if (result.error) {
+            if (msg) msg.style.color = '#ff5555';
+            if (msg) msg.textContent = `❌ ${result.error}`;
+        } else {
+            if (msg) { msg.style.color = '#55ff55'; msg.textContent = '✅ Skin uploaded & saved! Restart game to see it on your avatar.'; }
+            if (st)  st.textContent = '✅ Custom skin active';
+            drawSkinPreview(result.dataUrl);
+            // Push new skin to multiplayer immediately
+            if (multiplayer) multiplayer.mySkinDataUrl = result.dataUrl;
+        }
+        e.target.value = '';
+    });
+}
+
+const skinResetBtn = document.getElementById('skin-reset-btn');
+if (skinResetBtn) {
+    skinResetBtn.addEventListener('click', () => {
+        clearSkinCache();
+        if (multiplayer) multiplayer.mySkinDataUrl = null;
+        const canvas = document.getElementById('skin-preview-canvas');
+        if (canvas) canvas.getContext('2d').clearRect(0, 0, 64, 64);
+        const st  = document.getElementById('skin-status');
+        const msg = document.getElementById('skin-upload-msg');
+        if (st)  st.textContent = 'No custom skin set';
+        if (msg) { msg.style.color = '#aaa'; msg.textContent = 'Skin reset to default.'; }
+    });
+}
 // --- 3. UI wiring: blocker / start screen ---
 const blocker = document.getElementById('blocker');
 const hotbar = document.getElementById('hotbar');

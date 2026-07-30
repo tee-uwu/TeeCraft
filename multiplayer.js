@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { supabase, getCurrentUser } from './auth.js';
+import { buildSkinnedPlayer, loadSkinImage, loadMySkin } from './skin.js';
 
 // ─── Chat System ──────────────────────────────────────────────────────────────
 const CHAT_VISIBLE_MS = 6000; // how long a message floats above head
@@ -129,7 +130,10 @@ export class MultiplayerManager {
 
         const userId   = this.currentUser.id;
         const userName = this.currentUser.email ? this.currentUser.email.split('@')[0] : 'Player';
-        this.userName  = userName;
+            this.userName  = userName;
+
+        // Load my own skin so we can broadcast its data URL in moves
+        loadMySkin().then(d => { this.mySkinDataUrl = d || null; });
 
         this.channel = supabase.channel('teecraft_multiplayer', {
             config: { presence: { key: userId } }
@@ -263,7 +267,8 @@ export class MultiplayerManager {
                 name: this.userName || 'Player',
                 x: pos.x, y: pos.y, z: pos.z,
                 rotY: rot.y,
-                heldItem: this.player.getActiveItemId()
+                heldItem: this.player.getActiveItemId(),
+                skinDataUrl: this.mySkinDataUrl || null
             }
         });
     }
@@ -287,6 +292,28 @@ export class MultiplayerManager {
         remote.targetPos.set(data.x, data.y - 1.2, data.z);
         remote.targetRotY = data.rotY;
         remote.lastSeen = Date.now();
+
+        // Apply skin if provided and not yet applied or changed
+        if (data.skinDataUrl && data.skinDataUrl !== remote.appliedSkinUrl) {
+            remote.appliedSkinUrl = data.skinDataUrl;
+            this._applySkin(remote, data.skinDataUrl);
+        }
+    }
+
+    async _applySkin(remote, skinDataUrl) {
+        try {
+            const img = await loadSkinImage(skinDataUrl);
+            // Remove old body meshes, replace with skinned player
+            const oldSkinned = remote.skinnedGroup;
+            if (oldSkinned) remote.group.remove(oldSkinned);
+
+            const skinnedGroup = buildSkinnedPlayer(img);
+            // Don't re-add nametag (it's already in remote.group at y=1.95)
+            remote.group.add(skinnedGroup);
+            remote.skinnedGroup = skinnedGroup;
+        } catch (e) {
+            console.warn('Failed to apply skin for remote player:', e);
+        }
     }
 
     removeRemotePlayer(id) {
@@ -347,6 +374,8 @@ export class MultiplayerManager {
             nameSprite,
             bubbleSprite: null,
             bubbleTimer: 0,
+            skinnedGroup: null,
+            appliedSkinUrl: null,
             targetPos: new THREE.Vector3(),
             targetRotY: 0,
             lastSeen: Date.now()

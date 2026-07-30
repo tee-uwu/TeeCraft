@@ -202,6 +202,28 @@
                 <input type="range" id="sens-slider" min="0.1" max="5.0" step="0.1" value="1.0">
                 <span id="sens-val">1.0</span>
             </div>
+
+            <!-- ── Skin Customizer ─────────────────────────── -->
+            <hr style="border-color:#444; margin:18px 0;">
+            <div class="skin-section">
+                <div class="skin-section-title">🎨 Player Skin</div>
+                <p class="skin-hint">Upload a standard 64×64 Minecraft skin PNG.<br>Your skin will appear to all multiplayer players!</p>
+                <div class="skin-preview-row">
+                    <canvas id="skin-preview-canvas" width="64" height="64" title="Skin Preview"></canvas>
+                    <div class="skin-info">
+                        <div id="skin-status" class="skin-status">No custom skin set</div>
+                        <label for="skin-file-input" class="mc-btn skin-upload-btn" style="margin-top:8px; display:inline-block; cursor:pointer;">
+                            📁 Choose Skin PNG
+                        </label>
+                        <input type="file" id="skin-file-input" accept="image/png,image/*" style="display:none;">
+                        <button id="skin-reset-btn" class="mc-btn" style="margin-top:6px; background:#7f1d1d !important; font-size:9px;">
+                            ✖ Reset to Default
+                        </button>
+                    </div>
+                </div>
+                <div id="skin-upload-msg" style="color:#55ff55; font-size:10px; margin-top:6px; min-height:14px;"></div>
+            </div>
+
             <button id="close-settings-btn" style="margin-top:20px; padding: 10px 20px;">Done</button>
         </div>
 
