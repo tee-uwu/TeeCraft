@@ -962,8 +962,8 @@ export class Player {
                 this.velocity.y = Math.max(this.velocity.y - flyAccel * dt, -flyMaxV);
             } else {
                 // Hover: damp Y to zero quickly
-                this.velocity.y *= Math.max(0, 1 - flyDrag * 1.4 * dt);
-                if (Math.abs(this.velocity.y) < 0.05) this.velocity.y = 0;
+                // Hover: maintain current altitude without drifting
+                this.velocity.y = 0;
             }
 
             this.fallStartY = null;
@@ -972,6 +972,8 @@ export class Player {
             this.camera.position.x += this.velocity.x * dt;
             this.camera.position.y += this.velocity.y * dt;
             this.camera.position.z += this.velocity.z * dt;
+            // Keep physicsPos in sync after movement
+            this.physicsPos.copy(this.camera.position);
 
         // ── SWIMMING ──────────────────────────────────────────────────────────
         } else if (this.isSwimming) {
@@ -1027,8 +1029,8 @@ export class Player {
         }
 
         // ── Third-person: save true physics pos, then offset camera ──────────
+        // Render third‑person camera based on the true physics position.
         if (this.thirdPerson && this.selfGroup) {
-            this.physicsPos.copy(this.camera.position);
             this._renderThirdPerson();
         }
     }
